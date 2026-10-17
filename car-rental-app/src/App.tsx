@@ -3,6 +3,7 @@ import { Navbar, Tab } from './components/Navbar';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { ChatWidget } from './components/ChatWidget';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { CarSearch } from './components/Customer/CarSearch';
 import { CarCard } from './components/Customer/CarCard';
 import { BookingModal } from './components/Customer/BookingModal';
@@ -295,9 +296,11 @@ const AppInner: React.FC = () => {
 
 
 export const App: React.FC = () => (
-  <AuthProvider>
-    <AppInner />
-  </AuthProvider>
+  <ErrorBoundary fallbackTitle="ระบบขัดข้องชั่วคราว">
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
+  </ErrorBoundary>
 );
 
 export default App;

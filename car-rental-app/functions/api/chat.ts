@@ -76,11 +76,16 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: E
         max_tokens: 400,
         temperature: 0.2,
       });
-      const text =
-        (typeof result?.response === 'string' ? result.response : '') ||
-        result?.choices?.[0]?.message?.content ||
-        '';
-      return json({ reply: text.trim() || REFUSAL });
+      let rawText = '';
+      if (typeof result?.response === 'string') {
+        rawText = result.response;
+      } else if (typeof result?.choices?.[0]?.message?.content === 'string') {
+        rawText = result.choices[0].message.content;
+      } else if (result?.response && typeof result.response === 'object') {
+        rawText = JSON.stringify(result.response);
+      }
+      const text = rawText ? rawText.trim() : REFUSAL;
+      return json({ reply: text || REFUSAL });
     } catch (err) {
       lastErr = (err as Error).message;
     }
