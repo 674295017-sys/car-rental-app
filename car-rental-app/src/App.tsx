@@ -43,13 +43,21 @@ const AppInner: React.FC = () => {
   const [pendingBooking, setPendingBooking] = useState<Partial<Booking> | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
-  const handleLoginSuccess = useCallbackSafe(() => {
+  const loginSuccessRef = React.useRef(() => {
     setCurrentTab('customer');
     if (pendingVehicleAfterLogin) {
       setSelectedVehicleForBooking(pendingVehicleAfterLogin);
       setPendingVehicleAfterLogin(null);
     }
   });
+  loginSuccessRef.current = () => {
+    setCurrentTab('customer');
+    if (pendingVehicleAfterLogin) {
+      setSelectedVehicleForBooking(pendingVehicleAfterLogin);
+      setPendingVehicleAfterLogin(null);
+    }
+  };
+  const handleLoginSuccess = useCallback(() => loginSuccessRef.current(), []);
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -285,12 +293,6 @@ const AppInner: React.FC = () => {
   );
 };
 
-// Stable callback helper (avoids re-initialising Google button on every render)
-function useCallbackSafe(fn: () => void) {
-  const ref = React.useRef(fn);
-  ref.current = fn;
-  return useCallback(() => ref.current(), []);
-}
 
 export const App: React.FC = () => (
   <AuthProvider>
