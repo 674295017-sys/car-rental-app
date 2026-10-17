@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Calendar, Shield, CreditCard, AlertTriangle, Check, User, Phone, Mail, FileText } from 'lucide-react';
 import { Vehicle, Booking } from '../../types';
 
@@ -9,6 +9,8 @@ interface BookingModalProps {
   pickupBranch: string;
   onClose: () => void;
   onProceedToPayment: (bookingData: Partial<Booking>) => void;
+  defaultName?: string;
+  defaultEmail?: string;
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({
@@ -18,10 +20,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   pickupBranch,
   onClose,
   onProceedToPayment,
+  defaultName = '',
+  defaultEmail = '',
 }) => {
   // Form State
-  const [customerName, setCustomerName] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerName, setCustomerName] = useState(defaultName);
+  const [customerEmail, setCustomerEmail] = useState(defaultEmail);
   const [customerPhone, setCustomerPhone] = useState('');
   const [idCard, setIdCard] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');

@@ -1,5 +1,8 @@
-﻿import React, { useState } from 'react';
-import { Navbar } from './components/Navbar';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Navbar, Tab } from './components/Navbar';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import { LoginPage } from './pages/LoginPage';
+import { ChatWidget } from './components/ChatWidget';
 import { CarSearch } from './components/Customer/CarSearch';
 import { CarCard } from './components/Customer/CarCard';
 import { BookingModal } from './components/Customer/BookingModal';
@@ -12,9 +15,18 @@ import { INITIAL_VEHICLES, INITIAL_BOOKINGS } from './data/mockVehicles';
 import { Vehicle, Booking, VehicleStatus } from './types';
 import { Shield, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
 
-export const App: React.FC = () => {
+const ADMIN_TABS: Tab[] = ['fleet', 'inspection', 'dashboard'];
+
+const AppInner: React.FC = () => {
+  const { user, isAdmin, loading } = useAuth();
   // Navigation State
-  const [currentTab, setCurrentTab] = useState<'customer' | 'fleet' | 'inspection' | 'dashboard'>('customer');
+  const [currentTab, setCurrentTab] = useState<Tab>('customer');
+  const [pendingVehicleAfterLogin, setPendingVehicleAfterLogin] = useState<Vehicle | null>(null);
+
+  // UI-level guard: non-admins can never stay on a backoffice tab
+  useEffect(() => {
+    if (!loading && !isAdmin && ADMIN_TABS.includes(currentTab)) setCurrentTab('customer');
+  }, [currentTab, isAdmin, loading]);
 
   // Application Data State
   const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
@@ -30,6 +42,14 @@ export const App: React.FC = () => {
   const [selectedVehicleForBooking, setSelectedVehicleForBooking] = useState<Vehicle | null>(null);
   const [pendingBooking, setPendingBooking] = useState<Partial<Booking> | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
+
+  const handleLoginSuccess = useCallbackSafe(() => {
+    setCurrentTab('customer');
+    if (pendingVehicleAfterLogin) {
+      setSelectedVehicleForBooking(pendingVehicleAfterLogin);
+      setPendingVehicleAfterLogin(null);
+    }
+  });
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -138,7 +158,15 @@ export const App: React.FC = () => {
                 <CarCard
                   key={vehicle.id}
                   vehicle={vehicle}
-                  onBook={(v) => setSelectedVehicleForBooking(v)}
+                  onBook={(v) => {
+                    if (!user) {
+                      setPendingVehicleAfterLogin(v);
+                      setCurrentTab('login');
+                      showToast('กรุณาเข้าสู่ระบบก่อนทำการจอง');
+                      return;
+                    }
+                    setSelectedVehicleForBooking(v);
+                  }}
                 />
               ))}
             </div>
@@ -181,8 +209,15 @@ export const App: React.FC = () => {
         </main>
       )}
 
-      {/* Tab 2: Staff Fleet Management */}
-      {currentTab === 'fleet' && (
+      {currentTab === 'login' && (
+        <LoginPage
+          onBack={() => setCurrentTab('customer')}
+          onSuccess={handleLoginSuccess}
+        />
+      )}
+
+      {/* Tab 2: Staff Fleet Management (admin only) */}
+      {isAdmin && currentTab === 'fleet' && (
         <FleetManager
           vehicles={vehicles}
           onUpdateStatus={handleUpdateStatus}
@@ -190,7 +225,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Tab 3: Vehicle Inspection */}
-      {currentTab === 'inspection' && (
+      {isAdmin && currentTab === 'inspection' && (
         <VehicleInspection
           vehicles={vehicles}
           bookings={bookings}
@@ -199,7 +234,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Tab 4: Executive Dashboard */}
-      {currentTab === 'dashboard' && (
+      {isAdmin && currentTab === 'dashboard' && (
         <DashboardMetrics
           vehicles={vehicles}
           bookings={bookings}
@@ -210,6 +245,8 @@ export const App: React.FC = () => {
       {selectedVehicleForBooking && (
         <BookingModal
           vehicle={selectedVehicleForBooking}
+          defaultName={user?.name}
+          defaultEmail={user?.email}
           pickupDate={pickupDate}
           returnDate={returnDate}
           pickupBranch={selectedBranch === 'ทุกสาขา' ? selectedVehicleForBooking.branch : selectedBranch}
@@ -238,6 +275,8 @@ export const App: React.FC = () => {
         />
       )}
 
+      <ChatWidget />
+
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800 text-center">
         <p>© 2026 DriveEase Car Rental System — Cloudflare Edge Ready Architecture</p>
@@ -245,5 +284,18 @@ export const App: React.FC = () => {
     </div>
   );
 };
+
+// Stable callback helper (avoids re-initialising Google button on every render)
+function useCallbackSafe(fn: () => void) {
+  const ref = React.useRef(fn);
+  ref.current = fn;
+  return useCallback(() => ref.current(), []);
+}
+
+export const App: React.FC = () => (
+  <AuthProvider>
+    <AppInner />
+  </AuthProvider>
+);
 
 export default App;

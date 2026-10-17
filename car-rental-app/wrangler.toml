@@ -1,4 +1,11 @@
 name = "car-rental-app"
-compatibility_date = "2024-05-01"
+compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
+
+[ai]
+binding = "AI"
+
+[vars]
+ADMIN_EMAILS = "674295017@parichat.skru.ac.th,seree999@gmail.com"
+GOOGLE_CLIENT_ID = "REPLACE_WITH_GOOGLE_CLIENT_ID.apps.googleusercontent.com"

@@ -29,6 +29,8 @@ jobs:
       - name: TypeCheck & Build
         working-directory: ./car-rental-app
         run: npm run build
+        env:
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
